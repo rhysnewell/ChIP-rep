@@ -1466,7 +1466,7 @@ def thresholdCalc(p, k=6):
     ps = sorted(p)
     bs = []
     for i, v in enumerate(ps):
-        b = scipy.stats.binom.cdf(i, n, v)
+        b = scipy.stats.binom.pmf(i, n, v)
         bs.append(b)
 
     idx = np.argwhere(np.diff(np.sign(np.array(ps) - np.array(bs))) != 0).reshape(-1) + 0
@@ -1637,11 +1637,11 @@ def performrankprod(bedf, minentries=2, rankmethod="signalvalue", specifyMax=Non
     print('Calculating binomial threshold...')
     # Calculate rpb and binomial intersection point
     Pks = thresholdCalc(rpb_up, k=len(bedf)-(minentries-1))
-    if len(Pks[2]) != 0:
-        binomAlpha = round(min(Pks[2]), 3)
+    if len(Pks[2]) != 0: # bounded between 0.05 and 0.5
+        binomAlpha = min(max(round(min(Pks[2]), 3), 0.05), 0.5)
     else:
-        print('No binomial convergence, defaulting to 0.1')
-        binomAlpha = 0.1
+        print('No binomial convergence, defaulting to 0.05')
+        binomAlpha = 0.05
 
     # Perform multiple hypothesis testing correction upon the pvals
     fdr = multipletesting.fdrcorrection(rpb_up)
