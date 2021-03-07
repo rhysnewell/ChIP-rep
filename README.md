@@ -149,6 +149,69 @@ prefixname.bed file has 10 columns. The output follows the standard peak format 
 |chr1|9118 |10409|T3_peak_87823|	491|	.	|15.000000	| 0.113938|0.712353	|
 
 
+Tutorial
+--------
+
+The following is a short tutorial on how to generate a set of peaks that can be used as input for ChIP-R.
+Usually, an experiment begins with the generation of HTS reads which will require mapping against a reference genome.
+Here we will be using dummy values for the reference genome and reads. This example also makes use of BWA for the read mapping
+and MACS2 for the peak calling. Alternatives to these programs is perfectly acceptable when using ChIP-R. 
+
+#### Read Mapping
+
+##### Replicate 1
+```
+bwa mem reference_genome.fasta sample_1.1.fastq sample_1.2.fastq | samtools view -h -b -S -F4 | samtools sort > aln_pe_rep1.bam
+```
+
+##### Control 1
+```
+bwa mem reference_genome.fasta control_1.1.fastq control_1.2.fastq | samtools view -h -b -S -F4 | samtools sort > aln_pe_input1.bam
+```
+
+##### Replicate 2
+```
+bwa mem reference_genome.fasta sample_2.1.fastq sample_2.2.fastq | samtools view -h -b -S -F4 | samtools sort > aln_pe_rep2.bam
+```
+
+##### Control 2
+```
+bwa mem reference_genome.fasta control_2.1.fastq control_2.2.fastq | samtools view -h -b -S -F4 | samtools sort > aln_pe_input2.bam
+```
+
+This will produce four BAM files, two experimental replicate read mapping files `aln_pe_rep1.bam` & `aln_pe_rep2.bam`
+and two control read mapping files used for the differential peak calling `aln_pe_input1.bam` & `aln_pe_input2.bam`
+
+#### Peak Calling
+
+We keep experiment 1 with control 1, and experiment 2 with control 2.
+
+##### Replicate 1
+
+```
+macs callpeak -t aln_pe_rep1.bam -c aln_pe_input1.bam -n rep1
+```
+
+##### Replicate 2
+
+```
+macs callpeak -t aln_pe_rep2.bam -c aln_pe_input2.bam -n rep2
+```
+
+This will result in multiple different output files from MACS2 but the files of interest will be
+`rep1_macs2_peaks.bed` & `rep2_macs2_peaks.bed`. We can pass these peaks directly to ChIP-R.
+
+#### Reproducibility analysis
+
+You may want to change the `m` values for your specific experiment. Lower `m` values will produce finer peak boundaries
+but there will be many fragmented peaks. However, `m` must always be less than or equal to the number of input files.
+```commandline
+chipr -i rep1_macs_peaks.bed rep2_macs_peak.bed -m 2 -o output
+```
+
+ChIP-R will produce three output files including a log file and two BED files. The BED files consist of 
+the set of ALL peak fragments and then the set of optimal peak fragments.
+
 Citation
 --------
 
